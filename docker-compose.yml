@@ -1,0 +1,30 @@
+version: '3.8'
+
+services:
+  weather-app:
+    build: .
+    ports:
+      - "5000:5000"
+    environment:
+      - WEATHER_API_KEY=e82786095ae44fce53834e21f459c2cc
+      - CITY=Vorkuta
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 5s
+
+  # Сервис мониторинга (используем curl для проверки)
+  monitor:
+    image: curlimages/curl
+    depends_on:
+      - weather-app
+    command: >
+      /bin/sh -c "
+      while true; do
+        curl -s -o /dev/null -w '%{http_code}' http://weather-app:5000/ || echo 'Service down';
+        sleep 10;
+      done"
+    restart: unless-stopped
